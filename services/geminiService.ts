@@ -23,10 +23,11 @@ function decode(base64: string) {
 
 async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
-  const buffer = ctx.createBuffer(numChannels, dataInt16.length / numChannels, sampleRate);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < dataInt16.length / numChannels; i++) {
+    for (let i = 0; i < frameCount; i++) {
       channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
     }
   }
@@ -62,7 +63,6 @@ export const playSFX = (type: 'success' | 'error' | 'click') => {
 export const speakText = async (text: string) => {
   const apiKey = getAPIKey();
   if (!apiKey) {
-    console.warn("API Key missing, falling back to window.speechSynthesis");
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ar-SA';
     window.speechSynthesis.speak(utterance);
@@ -73,13 +73,13 @@ export const speakText = async (text: string) => {
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `بصفتك طفل ولد صغير متحمس وبطل اسمه بطل السلامة، قل التالي بأسلوب مرح ومشجع: ${text}` }] }],
+      contents: [{ parts: [{ text: `تحدث بمرح كبطل تعليمي: ${text}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: { 
           voiceConfig: { 
             prebuiltVoiceConfig: { 
-              voiceName: 'Kore' // صوت طفل ولد
+              voiceName: 'Kore' 
             } 
           } 
         },

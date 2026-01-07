@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const getAPIKey = () => process.env.API_KEY || "";
 
-export const generateSafetyImage = async (prompt: string, stage: string): Promise<string | null> => {
+export const generateSafetyImage = async (prompt: string, _stage: string): Promise<string | null> => {
   const apiKey = getAPIKey();
   if (!apiKey) {
     console.error("API Key is missing for image generation.");
@@ -13,21 +13,10 @@ export const generateSafetyImage = async (prompt: string, stage: string): Promis
   try {
     const ai = new GoogleGenAI({ apiKey });
     
-    /**
-     * محفز (Prompt) فائق الدقة:
-     * - يمنع النصوص تماماً لمنع ظهور كلمات مثل 'Tropical'
-     * - يركز على الشخصيات والأفعال
-     * - يطلب أسلوب كرتوني ثلاثي الأبعاد احترافي
-     */
     const enhancedPrompt = `
       Create a high-quality 3D digital cartoon illustration in the style of a Pixar movie.
       SCENE DESCRIPTION: ${prompt}.
-      MANDATORY REQUIREMENTS:
-      - NO TEXT: Absolutely NO words, letters, or logos inside the image.
-      - NO ABSTRACT BACKGROUNDS: Do not create wallpapers or generic patterns.
-      - REALISTIC CARTOON SCENE: Show the specific character interaction and environment.
-      - LIGHTING: Soft, vibrant, and child-friendly.
-      - COMPOSITION: Full scene, not a collage or a background design.
+      MANDATORY: NO TEXT, NO WORDS, child-friendly, vibrant colors, 16:9 aspect ratio.
     `.trim();
     
     const response = await ai.models.generateContent({
@@ -42,19 +31,19 @@ export const generateSafetyImage = async (prompt: string, stage: string): Promis
       },
     });
 
-    // إصلاح الخطأ البرمجي هنا باستخدام تحققات صريحة (Explicit Checks)
-    const candidates = response.candidates;
-    if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
-      const parts = candidates[0].content.parts;
+    // استخدام Optional Chaining والتحقق من القيمة لضمان سلامة النوع (Type Safety)
+    const candidate = response.candidates?.[0];
+    const parts = candidate?.content?.parts;
+
+    if (parts && Array.isArray(parts)) {
       const imagePart = parts.find(p => p.inlineData);
-      
-      // التأكد من وجود inlineData و data قبل استخدامهما
-      if (imagePart && imagePart.inlineData && imagePart.inlineData.data) {
-        const mimeType = imagePart.inlineData.mimeType;
+      if (imagePart?.inlineData?.data) {
+        const mimeType = imagePart.inlineData.mimeType || "image/png";
         const data = imagePart.inlineData.data;
         return `data:${mimeType};base64,${data}`;
       }
     }
+    
     return null;
   } catch (e) {
     console.error("Image generation service error:", e);
