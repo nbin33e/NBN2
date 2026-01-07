@@ -42,10 +42,17 @@ export const generateSafetyImage = async (prompt: string, stage: string): Promis
       },
     });
 
-    if (response.candidates && response.candidates[0].content.parts) {
-      const imagePart = response.candidates[0].content.parts.find(p => p.inlineData);
-      if (imagePart?.inlineData?.data) {
-        return `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+    // إصلاح الخطأ البرمجي هنا باستخدام تحققات صريحة (Explicit Checks)
+    const candidates = response.candidates;
+    if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
+      const parts = candidates[0].content.parts;
+      const imagePart = parts.find(p => p.inlineData);
+      
+      // التأكد من وجود inlineData و data قبل استخدامهما
+      if (imagePart && imagePart.inlineData && imagePart.inlineData.data) {
+        const mimeType = imagePart.inlineData.mimeType;
+        const data = imagePart.inlineData.data;
+        return `data:${mimeType};base64,${data}`;
       }
     }
     return null;
